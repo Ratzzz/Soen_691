@@ -210,7 +210,8 @@ public class StatVisualizer extends AbstractVisualizer implements Clearable, Act
             FileWriter writer = null;
             try {
                 writer = new FileWriter(chooser.getSelectedFile()); // TODO Charset ?
-                CSVSaveService.saveCSVStats(model,writer, saveHeaders.isSelected());
+               
+                CSVSaveService.saveCSVStats(StatGraphVisualizer.getAllTableData(model, StatGraphVisualizer.FORMATS),writer);
             } catch (FileNotFoundException e) {
                 JMeterUtils.reportErrorToUser(e.getMessage(), "Error saving data");
             } catch (IOException e) {

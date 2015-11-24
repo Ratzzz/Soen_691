@@ -83,6 +83,8 @@ import org.apache.jorphan.util.JOrphanUtils;
 import org.apache.log.Logger;
 import java.text.MessageFormat;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
+import java.text.DecimalFormat;
+import java.text.Format;
 
 /**
  * Aggregrate Table-Based Reporting Visualizer for JMeter. Props to the people
@@ -117,6 +119,24 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
         		            "aggregate_report_error%",        //$NON-NLS-1$
         		            "aggregate_report_rate",          //$NON-NLS-1$
         		            "aggregate_report_bandwidth" };   //$NON-NLS-1$
+        
+        // Column formats
+            static final Format[] FORMATS =
+                new Format[]{
+                    null, // Label
+                   null, // count
+                    null, // Mean
+                    null, // median
+                    null, // 90%
+                    null, // 95%
+                    null, // 99%
+                    null, // Min
+                    null, // Max
+                    new DecimalFormat("#0.00%"), // Error %age //$NON-NLS-1$
+                    new DecimalFormat("#.0"),      // Throughput //$NON-NLS-1$
+                    new DecimalFormat("#.0")    // pageSize   //$NON-NLS-1$
+                };
+            
         		    
         		    static final Object[][] COLUMNS_MSG_PARAMETERS = { null, //$NON-NLS-1$
         		            null,                             //$NON-NLS-1$
@@ -574,7 +594,7 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
      * work as expected.
      * @return the data from the model
      */
-    public List<List<Object>> getAllTableData() {
+    public static List<List<Object>> getAllTableData(ObjectTableModel model, Format[] formats) {
         List<List<Object>> data = new ArrayList<List<Object>>();
         if (model.getRowCount() > 0) {
             for (int rw=0; rw < model.getRowCount(); rw++) {
@@ -583,7 +603,11 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
                 data.add(column);
                 for (int idx=0; idx < cols; idx++) {
                     Object val = model.getValueAt(rw,idx);
-                    column.add(val);
+                    if(formats[idx] != null) {
+                    	                        column.add(formats[idx].format(val));
+                    	                    } else {
+                    	                        column.add(val);
+                    	                    }
                 }
             }
         }
@@ -613,7 +637,7 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
             FileWriter writer = null;
             try {
                 writer = new FileWriter(chooser.getSelectedFile()); // TODO Charset ?
-                CSVSaveService.saveCSVStats(getAllTableData(),writer,saveHeaders.isSelected() ? COLUMNS : null);
+                CSVSaveService.saveCSVStats(getAllTableData(model, FORMATS),writer,saveHeaders.isSelected() ? COLUMNS : null);
             } catch (FileNotFoundException e) {
                 JMeterUtils.reportErrorToUser(e.getMessage(), "Error saving data");
             } catch (IOException e) {
