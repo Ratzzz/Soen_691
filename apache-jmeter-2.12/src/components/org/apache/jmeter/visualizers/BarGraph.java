@@ -23,7 +23,7 @@ import java.awt.Color;
 
 import javax.swing.JCheckBox;
 
-import org.apache.jmeter.util.JMeterUtils;
+
 
 public class BarGraph {
     
@@ -34,13 +34,13 @@ public class BarGraph {
     private Color backColor;
 
     /**
-     * @param resString
+     * @param label 
      * @param checked
      * @param backColor
      */
-    public BarGraph(String resString, boolean checked, Color backColor) {
+    public BarGraph(String label, boolean checked, Color backColor) {
         super();
-        this.label = JMeterUtils.getResString(resString);
+        this.label = label;
         this.chkBox = new JCheckBox(this.label, checked);
         this.backColor = backColor;
     }

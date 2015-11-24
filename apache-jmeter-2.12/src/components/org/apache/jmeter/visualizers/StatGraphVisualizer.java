@@ -81,6 +81,8 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.jorphan.reflect.Functor;
 import org.apache.jorphan.util.JOrphanUtils;
 import org.apache.log.Logger;
+import java.text.MessageFormat;
+import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 
 /**
  * Aggregrate Table-Based Reporting Visualizer for JMeter. Props to the people
@@ -93,23 +95,49 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
     private static final long serialVersionUID = 240L;
 
     private static final Logger log = LoggingManager.getLoggerForClass();
+    
+        private static final String pct1Label = JMeterUtils.getPropDefault("aggregate_rpt_pct1", "90");
+        private static final String pct2Label = JMeterUtils.getPropDefault("aggregate_rpt_pct2", "95");
+        private static final String pct3Label = JMeterUtils.getPropDefault("aggregate_rpt_pct3", "99");
+       
+        private static final Float pct1Value = new Float(Float.parseFloat(pct1Label)/100);
+        private static final Float pct2Value =  new Float(Float.parseFloat(pct2Label)/100);
+        private static final Float pct3Value =  new Float(Float.parseFloat(pct3Label)/100);
 
-    private final String[] COLUMNS = { JMeterUtils.getResString("sampler_label"), //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_count"),         //$NON-NLS-1$
-            JMeterUtils.getResString("average"),                        //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_median"),        //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_90%_line"),      //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_min"),           //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_max"),           //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_error%"),        //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_rate"),          //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_bandwidth") };   //$NON-NLS-1$
-
-    private final String[] GRAPH_COLUMNS = {JMeterUtils.getResString("average"),//$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_median"),        //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_90%_line"),      //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_min"),           //$NON-NLS-1$
-            JMeterUtils.getResString("aggregate_report_max")};          //$NON-NLS-1$
+        static final String[] COLUMNS = { 
+        		            "sampler_label",                  //$NON-NLS-1$
+        		            "aggregate_report_count",         //$NON-NLS-1$
+        		            "average",                        //$NON-NLS-1$
+        		            "aggregate_report_median",        //$NON-NLS-1$
+        		            "aggregate_report_xx_pct1_line",      //$NON-NLS-1$
+        		            "aggregate_report_xx_pct2_line",      //$NON-NLS-1$
+        		            "aggregate_report_xx_pct3_line",      //$NON-NLS-1$
+        		            "aggregate_report_min",           //$NON-NLS-1$
+        		            "aggregate_report_max",           //$NON-NLS-1$
+        		            "aggregate_report_error%",        //$NON-NLS-1$
+        		            "aggregate_report_rate",          //$NON-NLS-1$
+        		            "aggregate_report_bandwidth" };   //$NON-NLS-1$
+        		    
+        		    static final Object[][] COLUMNS_MSG_PARAMETERS = { null, //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            new Object[]{pct1Label},                      //$NON-NLS-1$
+        		            new Object[]{pct2Label},                      //$NON-NLS-1$
+        		            new Object[]{pct3Label},                      //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null,                             //$NON-NLS-1$
+        		            null };                           //$NON-NLS-1$
+        		
+        		    private final String[] GRAPH_COLUMNS = {"average",//$NON-NLS-1$
+        		            "aggregate_report_median",        //$NON-NLS-1$
+        		            "aggregate_report_xx_pct1_line",      //$NON-NLS-1$
+        		            "aggregate_report_xx_pct2_line",      //$NON-NLS-1$
+        		            "aggregate_report_xx_pct3_line",      //$NON-NLS-1$
+        		            "aggregate_report_min",           //$NON-NLS-1$
+        		            "aggregate_report_max"};   
 
     private final String TOTAL_ROW_LABEL =
         JMeterUtils.getResString("aggregate_report_total_label");       //$NON-NLS-1$
@@ -239,7 +267,24 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
 
     public StatGraphVisualizer() {
         super();
-        model = new ObjectTableModel(COLUMNS,
+                model = createObjectTableModel();
+                eltList.add(new BarGraph(JMeterUtils.getResString("average"), true, new Color(202, 0, 0)));
+                eltList.add(new BarGraph(JMeterUtils.getResString("aggregate_report_median"), false, new Color(49, 49, 181)));
+                eltList.add(new BarGraph(MessageFormat.format(JMeterUtils.getResString("aggregate_report_xx_pct1_line"),new Object[]{pct1Label}), false, new Color(42, 121, 42)));
+                eltList.add(new BarGraph(MessageFormat.format(JMeterUtils.getResString("aggregate_report_xx_pct2_line"),new Object[]{pct2Label}), false, new Color(242, 226, 8)));
+                eltList.add(new BarGraph(MessageFormat.format(JMeterUtils.getResString("aggregate_report_xx_pct3_line"),new Object[]{pct3Label}), false, new Color(202, 10 , 232)));
+                eltList.add(new BarGraph(JMeterUtils.getResString("aggregate_report_min"), false, Color.LIGHT_GRAY));
+                eltList.add(new BarGraph(JMeterUtils.getResString("aggregate_report_max"), false, Color.DARK_GRAY));
+                clearData();
+                init();
+            }
+    
+        /**
+         * Creates that Table model 
+         * @return ObjectTableModel
+         */
+        static ObjectTableModel createObjectTableModel() {
+            return new ObjectTableModel(COLUMNS,
                 SamplingStatCalculator.class,
                 new Functor[] {
                 new Functor("getLabel"),                    //$NON-NLS-1$
@@ -247,36 +292,36 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
                 new Functor("getMeanAsNumber"),                //$NON-NLS-1$
                 new Functor("getMedian"),                    //$NON-NLS-1$
                 new Functor("getPercentPoint",                //$NON-NLS-1$
-                new Object[] { new Float(.900) }),
+                 new Object[] { pct1Value }),
+                 new Functor("getPercentPoint",                //$NON-NLS-1$
+                 new Object[] { pct2Value }),
+                 new Functor("getPercentPoint",                //$NON-NLS-1$
+                 new Object[] { pct3Value }),
                 new Functor("getMin"),                        //$NON-NLS-1$
                 new Functor("getMax"),                         //$NON-NLS-1$
                 new Functor("getErrorPercentage"),            //$NON-NLS-1$
                 new Functor("getRate"),                        //$NON-NLS-1$
                 new Functor("getKBPerSecond") },            //$NON-NLS-1$
-                new Functor[] { null, null, null, null, null, null, null, null,    null, null },
-                new Class[] { String.class, Long.class, Long.class, Long.class, Long.class, Long.class,
-                Long.class, String.class, String.class, String.class });
-        eltList.add(new BarGraph("average", true, new Color(202, 0, 0)));
-        eltList.add(new BarGraph("aggregate_report_median", false, new Color(49, 49, 181)));
-        eltList.add(new BarGraph("aggregate_report_90%_line", false, new Color(42, 121, 42)));
-        eltList.add(new BarGraph("aggregate_report_min", false, Color.LIGHT_GRAY));
-        eltList.add(new BarGraph("aggregate_report_max", false, Color.DARK_GRAY));
-        clearData();
-        init();
+                new Functor[] { null, null, null, null, null, null, null, null, null, null, null, null },
+                                new Class[] { String.class, Long.class, Long.class, Long.class, Long.class, 
+                                            Long.class, Long.class, Long.class, Long.class, String.class, 
+                                            String.class, String.class });
     }
 
     // Column renderers
-    private static final TableCellRenderer[] RENDERERS =
+        static final TableCellRenderer[] RENDERERS =
         new TableCellRenderer[]{
             null, // Label
             null, // count
             null, // Mean
             null, // median
             null, // 90%
+            null, // 95%
+            null, // 99%
             null, // Min
             null, // Max
-            new NumberRenderer("#0.00%"), // Error %age
-            new RateRenderer("#.0"),      // Throughpur
+            new NumberRenderer("#0.00%"), // Error %age //$NON-NLS-1$
+            new RateRenderer("#.0"),      // Throughput //$NON-NLS-1$
             new NumberRenderer("#.0"),    // pageSize
         };
 
@@ -347,7 +392,8 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
         mainPanel.add(makeTitlePanel());
 
         myJTable = new JTable(model);
-        myJTable.setPreferredScrollableViewportSize(new Dimension(500, 80));
+        myJTable.getTableHeader().setDefaultRenderer(new HeaderAsPropertyRenderer(COLUMNS_MSG_PARAMETERS));
+        myJTable.setPreferredScrollableViewportSize(new Dimension(500, 70));
         RendererUtils.applyRenderers(myJTable, RENDERERS);
         myScrollPane = new JScrollPane(myJTable);
 
@@ -424,7 +470,7 @@ public class StatGraphVisualizer extends AbstractVisualizer implements Clearable
         graphPanel.setMaxLength(maxLength);
         graphPanel.setMaxYAxisScale(maxYAxisScale);
         graphPanel.setXAxisLabels(getAxisLabels());
-        graphPanel.setXAxisTitle((String) columnsList.getSelectedItem());
+        graphPanel.setXAxisTitle(JMeterUtils.getResString((String) columnsList.getSelectedItem()));;
         graphPanel.setYAxisLabels(this.yAxisLabel);
         graphPanel.setYAxisTitle(this.yAxisTitle);
         graphPanel.setLegendLabels(getLegendLabels());
